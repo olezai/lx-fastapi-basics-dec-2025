@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+eggs/
+*.egg-info/
+.installed.cfg
+*.pth
+
+# Virtual environment
+# Note: It's generally a good idea to ignore your virtual environment
+# directory. Common names are 'venv', 'env', or just a folder named after your environment.
+venv/
+env/
+.venv/
+.env/
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Docs
+docs/_build/
+
+# Jupyter Notebook / IPython
+.ipynb_checkpoints
+
+# IDE and Editor files
+# Visual Studio Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# macOS files
+.DS_Store
+
+# Logs and other temporary files
+*.log
+tmp/
