@@ -14,3 +14,10 @@ def health_check():
 def greet_user(name: str):
     return {"message": f"Hello, {name}!"}
 
+@app.get("/search")
+def search_items(q: str, limit: int = 10):
+    return {
+        "query": q,
+        "limit": limit,
+        "results": f"Searching for '{q}' with limit {limit}"
+    }
