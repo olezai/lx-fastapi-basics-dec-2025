@@ -1,23 +1,69 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from schemas.question import QuestionCreate, QuestionBase, Question as QuestionSchema
+from database.question import quest_db, questions_table, QuestionQuery
+from typing import List
+from datetime import datetime
 
-app = FastAPI(title="My First API")
+# -----------------------------
+# FastAPI setup
+# -----------------------------
+app = FastAPI(title="Quiz Service - Questions API")
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to FastAPI!"}
+@app.on_event("shutdown")
+def shutdown_db_client():
+    print("Closing TinyDB connection...")
+    quest_db.close()  # This flushes all cached data to disk
+    print("TinyDB closed.")
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+# -----------------------------
+# CRUD Endpoints
+# -----------------------------
 
-@app.get("/hello/{name}")
-def greet_user(name: str):
-    return {"message": f"Hello, {name}!"}
+# Create question
+@app.post("/questions/", response_model=QuestionSchema)
+def create_question(q: QuestionCreate):
+    new_q = QuestionSchema(**q.dict())
+    questions_table.insert(new_q.dict())
+    return new_q
 
-@app.get("/search")
-def search_items(q: str, limit: int = 10):
-    return {
-        "query": q,
-        "limit": limit,
-        "results": f"Searching for '{q}' with limit {limit}"
-    }
+# TODO: Implement READ ALL endpoint
+# GET /questions/
+# - Retrieve all questions from questions_table
+# - Return list of all questions
+
+# Get question by ID
+@app.get("/questions/{question_id}", response_model=QuestionSchema)
+def get_question(question_id: str):
+    q = questions_table.get(QuestionQuery.id == question_id)
+    if not q:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return q
+
+# Update question
+@app.put("/questions/{question_id}", response_model=QuestionSchema)
+def update_question(question_id: str, q_update: QuestionCreate):
+    q = questions_table.get(QuestionQuery.id == question_id)
+    if not q:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    updated = QuestionSchema(
+        **q_update.dict(),
+        id=question_id,
+        created_at=q["created_at"],
+        updated_at=datetime.utcnow()
+    )
+    questions_table.update(updated.dict(), QuestionQuery.id == question_id)
+    return updated
+
+# TODO: Implement DELETE endpoint
+# DELETE /questions/{question_id}
+# - Check if question exists (return 404 if not found)
+# - Remove question from questions_table
+# - Return success message like {"detail": "Question deleted"}
+
+# Flush database
+@app.post("/flush")
+def flush_db():
+    quest_db.storage.flush()
+    return {"detail": "DB flushed"}
+
