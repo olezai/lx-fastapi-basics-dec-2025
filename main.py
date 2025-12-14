@@ -9,6 +9,30 @@ from datetime import datetime
 # -----------------------------
 app = FastAPI(title="Quiz Service - Questions API")
 
+# Create root endpoint that returns welcome message
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to QuizApp!"}
+
+# Create health check endpoint
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
+# Create greeting endpoint that accepts name as path parameter
+@app.get("/hello/{name}")
+def greet_user(name: str):
+    return {"message": f"Hello, {name}!"}
+
+# Create search endpoint with query parameters (q: str, limit: int = 10)
+@app.get("/search/")
+def search_items(q: str, limit: int = 10):
+    return {
+        "query": q,
+        "limit": limit,
+        "results": f"Searching for '{q}' with limit {limit}"
+    }
+
 @app.on_event("shutdown")
 def shutdown_db_client():
     print("Closing TinyDB connection...")
@@ -24,6 +48,7 @@ def shutdown_db_client():
 def create_question(q: QuestionCreate):
     new_q = QuestionSchema(**q.dict())
     questions_table.insert(new_q.dict())
+    print(f"Created question with ID: {new_q.id}")
     return new_q
 
 # TODO: Implement READ ALL endpoint
@@ -33,9 +58,7 @@ def create_question(q: QuestionCreate):
 @app.get("/questions/", response_model=QuestionSchema)
 def list_questions():
     q = questions_table.all()
-    if not q:
-        raise HTTPException(status_code=404, detail="There are no questions found")
-    return q
+    return q or []
 
 # Get question by ID
 @app.get("/questions/{question_id}", response_model=QuestionSchema)
@@ -70,6 +93,12 @@ def update_question(question_id: str, q_update: QuestionCreate):
 # Flush database
 @app.post("/flush")
 def flush_db():
-    quest_db.storage.close()  # Ensure all cached data is written
+    # Ensure all cached data is written
+    # Using the TinyDB CachingMiddleware storage; close underlying storage to flush
+    try:
+        quest_db.storage.close()
+    except Exception:
+        # fallback to quest_db.close()
+        quest_db.close()
     return {"detail": "DB flushed"}
 
