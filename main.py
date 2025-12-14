@@ -91,10 +91,11 @@ def update_question(question_id: str, q_update: QuestionCreate):
 # - Return success message like {"detail": "Question deleted"}
 @app.delete("/questions/{question_id}", response_model=QuestionSchema)
 def delete_question(question_id: str):
-    q = questions_table.remove(QuestionQuery.id == question_id)
+    q = questions_table.get(QuestionQuery.id == question_id)
     if not q:
         raise HTTPException(status_code=404, detail="Question not found")
-    return q or {"detail": "Question deleted"}
+    questions_table.remove(QuestionQuery.id == question_id)
+    return q
 
 # Flush database
 @app.post("/flush")
