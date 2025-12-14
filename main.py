@@ -3,6 +3,7 @@ from schemas.question import QuestionCreate, QuestionBase, Question as QuestionS
 from database.question import quest_db, questions_table, QuestionQuery
 from typing import List
 from datetime import datetime
+from fastapi.encoders import jsonable_encoder
 
 # -----------------------------
 # FastAPI setup
@@ -46,8 +47,8 @@ def shutdown_db_client():
 # Create question
 @app.post("/questions/", response_model=QuestionSchema)
 def create_question(q: QuestionCreate):
-    new_q = QuestionSchema(**q.dict())
-    questions_table.insert(new_q.dict())
+    new_q = QuestionSchema(**q.model_dump())
+    questions_table.insert(jsonable_encoder(new_q))
     print(f"Created question with ID: {new_q.id}")
     return new_q
 
@@ -81,7 +82,7 @@ def update_question(question_id: str, q_update: QuestionCreate):
         created_at=q["created_at"],
         updated_at=datetime.utcnow()
     )
-    questions_table.update(updated.dict(), QuestionQuery.id == question_id)
+    questions_table.update(jsonable_encoder(updated), QuestionQuery.id == question_id)
     return updated
 
 # TODO: Implement DELETE endpoint
