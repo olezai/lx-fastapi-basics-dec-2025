@@ -30,6 +30,12 @@ def create_question(q: QuestionCreate):
 # GET /questions/
 # - Retrieve all questions from questions_table
 # - Return list of all questions
+@app.get("/questions/", response_model=QuestionSchema)
+def list_questions():
+    q = questions_table.all()
+    if not q:
+        raise HTTPException(status_code=404, detail="There are no questions found")
+    return q
 
 # Get question by ID
 @app.get("/questions/{question_id}", response_model=QuestionSchema)
@@ -64,6 +70,6 @@ def update_question(question_id: str, q_update: QuestionCreate):
 # Flush database
 @app.post("/flush")
 def flush_db():
-    quest_db.storage.flush()
+    quest_db.storage.close()  # Ensure all cached data is written
     return {"detail": "DB flushed"}
 
