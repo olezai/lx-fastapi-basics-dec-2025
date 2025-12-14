@@ -101,10 +101,6 @@ def delete_question(question_id: str):
 def flush_db():
     # Ensure all cached data is written
     # Using the TinyDB CachingMiddleware storage; close underlying storage to flush
-    try:
-        quest_db.storage.close()
-    except Exception:
-        # fallback to quest_db.close()
-        quest_db.close()
+    quest_db.close()
     return {"detail": "DB flushed"}
 
