@@ -15,8 +15,18 @@ class AnswerOption(BaseModel):
 # - correct_option: int
 # - explanation: str
 
+class QuestionBase(BaseModel):
+    topic: str
+    name: str
+    question: str
+    options: List[AnswerOption]
+    correct_option: int
+    explanation: str
+
 
 # TODO: Create QuestionCreate that inherits from QuestionBase
+class QuestionCreate(QuestionBase):
+    pass
 
 
 class Question(BaseModel):
