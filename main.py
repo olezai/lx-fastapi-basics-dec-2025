@@ -3,29 +3,29 @@ from schemas.question import QuestionCreate, QuestionBase, Question as QuestionS
 from database.question import quest_db, questions_table, QuestionQuery
 from typing import List
 from datetime import datetime
-from fastapi.encoders import jsonable_encoder
+# from fastapi.encoders import jsonable_encoder
 
 # -----------------------------
 # FastAPI setup
 # -----------------------------
 app = FastAPI(title="Quiz Service - Questions API")
 
-# Create root endpoint that returns welcome message
+# TODO: Create root endpoint that returns welcome message
 @app.get("/")
 def read_root():
     return {"message": "Welcome to QuizApp!"}
 
-# Create health check endpoint
+# TODO: Create health check endpoint
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
 
-# Create greeting endpoint that accepts name as path parameter
+# TODO: Create greeting endpoint that accepts name as path parameter
 @app.get("/hello/{name}")
 def greet_user(name: str):
     return {"message": f"Hello, {name}!"}
 
-# Create search endpoint with query parameters (q: str, limit: int = 10)
+# TODO: Create search endpoint with query parameters (q: str, limit: int = 10)
 @app.get("/search/")
 def search_items(q: str, limit: int = 10):
     return {
@@ -47,8 +47,10 @@ def shutdown_db_client():
 # Create question
 @app.post("/questions/", response_model=QuestionSchema)
 def create_question(q: QuestionCreate):
-    new_q = QuestionSchema(**q.model_dump())
-    questions_table.insert(jsonable_encoder(new_q))
+    # new_q = QuestionSchema(**q.model_dump())
+    # questions_table.insert(jsonable_encoder(new_q))
+    new_q = QuestionSchema(**q.dict())
+    questions_table.insert(new_q.model_dump(mode="json"))
     print(f"Created question with ID: {new_q.id}")
     return new_q
 
@@ -82,7 +84,8 @@ def update_question(question_id: str, q_update: QuestionCreate):
         created_at=q["created_at"],
         updated_at=datetime.utcnow()
     )
-    questions_table.update(jsonable_encoder(updated), QuestionQuery.id == question_id)
+    # questions_table.update(jsonable_encoder(updated), QuestionQuery.id == question_id)
+    questions_table.update(updated.model_dump(mode="json"), QuestionQuery.id == question_id)
     return updated
 
 # TODO: Implement DELETE endpoint
@@ -96,7 +99,7 @@ def delete_question(question_id: str):
     if not q:
         raise HTTPException(status_code=404, detail="Question not found")
     questions_table.remove(QuestionQuery.id == question_id)
-    return q
+    return {"detail": "Question deleted"}
 
 # Flush database
 @app.post("/flush")
