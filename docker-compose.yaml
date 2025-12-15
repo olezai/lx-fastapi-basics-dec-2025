@@ -1,0 +1,14 @@
+services:
+  question-service:
+    build: ./question
+    container_name: question-srv
+    ports:
+      - "8000:8000"
+    volumes:      
+      - ./question:/app # Mount code for hot-reload during development      
+      - question-data:/app/data # Named volume for persistent data
+    environment:
+      - PYTHONUNBUFFERED=1
+
+volumes:
+  question-data:
