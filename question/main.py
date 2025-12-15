@@ -18,7 +18,7 @@ def read_root():
 # TODO: Create health check endpoint
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
+        return {"status": "healthy", "service": "question-service"}
 
 # TODO: Create greeting endpoint that accepts name as path parameter
 @app.get("/hello/{name}")
