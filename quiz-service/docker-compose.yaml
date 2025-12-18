@@ -1,0 +1,46 @@
+name: quiz_app
+services:
+
+  quiz-db:
+    image: postgres:15
+    container_name: quiz-db
+    restart: always
+    environment:
+      POSTGRES_USER: quiz_usr
+      POSTGRES_PASSWORD: quiz_pwd
+      POSTGRES_DB: quiz_db
+    volumes:
+      - quiz_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quiz_usr -d quiz_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - svc_net
+
+  quiz-service:
+    build: ./quiz
+    container_name: quiz-srv
+    restart: always
+    depends_on:
+      quiz-db:
+        condition: service_healthy
+    environment:
+      PYTHONDONTWRITEBYTECODE: 1
+      PYTHONUNBUFFERED: 1
+      DATABASE_URL: postgresql+asyncpg://quiz_usr:quiz_pwd@quiz-db:5432/quiz_db
+      QUESTION_SERVICE_BASE_URL: http://question-srv:8000
+    ports:
+      - "8001:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --log-level trace --reload
+    volumes:
+      - ./quiz:/quiz
+    networks:
+      - svc_net
+
+volumes:
+  quiz_pg_data:
+
+networks:
+  svc_net:
