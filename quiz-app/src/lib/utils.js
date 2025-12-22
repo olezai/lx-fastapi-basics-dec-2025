@@ -9,7 +9,7 @@ export async function fetchQuizzesData() {
 
   const quizzesRes = await fetch(`${API_QUIZ_BASE}/quizzes/`);
 
-  if (!quizzesRes.ok) throw new Error('Failed to fetch quizzes');
+  if (!quizzesRes.ok) throw new Error('Failed to fetch quizzes: ${quizzesRes.status}');
 
   const quizzes = await quizzesRes.json();
 
