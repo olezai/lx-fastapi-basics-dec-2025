@@ -1,0 +1,12 @@
+services:
+  quiz-app:
+    build: .
+    container_name: quiz-app
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_QUEST_BASE=http://localhost:8000
+      - VITE_API_QUIZ_BASE=http://localhost:8001
