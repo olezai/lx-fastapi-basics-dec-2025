@@ -16,7 +16,7 @@ class Quiz(Base):
     user_id = Column(String, nullable=False, index=True)
     
     # Quiz configuration
-    topic_id = Column(String, nullable=False)
+    topic_id = Column(String, nullable=False)    
     topic_name = Column(String, nullable=False)  # Denormalized for API performance
     question_count = Column(Integer, nullable=False)
     passing_ratio = Column(Float, nullable=False) # e.g. 0.7 for 70%
@@ -52,9 +52,9 @@ class QuizQuestion(Base):
 
 class QuizSession(Base):
     __tablename__ = "quiz_sessions"
-    
+
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    quiz_id = Column(String, ForeignKey("quizzes.id"))
+    quiz_id = Column(String, ForeignKey("quizzes.id", ondelete="RESTRICT"))
     user_id = Column(String, nullable=False)
     
     # Properties
