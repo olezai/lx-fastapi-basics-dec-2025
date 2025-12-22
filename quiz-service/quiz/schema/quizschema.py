@@ -122,6 +122,7 @@ class QuizSessionDetails(QuizSession):
 # Response after quiz submission
 class QuizSessionSummary(BaseModel):
     id: str
+    quiz_id: str
     score: int
     question_count: int
     score_percentage: float
@@ -130,6 +131,8 @@ class QuizSessionSummary(BaseModel):
     unanswered_questions: int
     time_taken_seconds: int    
     completed_at: datetime
+    completion_details: str
+    passed: bool
     
     class Config:
         from_attributes = True

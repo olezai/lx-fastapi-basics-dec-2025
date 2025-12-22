@@ -342,7 +342,8 @@ async def start_quiz_session(
         quiz_id=quiz_id,
         user_id=current_user,
         attempt_number=previous_attempts + 1,  # Store which attempt this is
-        question_count=quiz.question_count
+        question_count=quiz.question_count,
+        time_limit_seconds=quiz.time_limit_seconds
     )
     
     session.add(qs)
@@ -418,6 +419,14 @@ async def get_next_question(
     if not q:
         raise HTTPException(status_code=404, detail=f"Failed to accure question index: {qsession.question_progress_index}")
     
+    return q
+
+# Get quiz question by ID
+@app.get("/quiz-questions/{question_id}", response_model=QuestionForClient)
+async def get_question(question_id: str, session: AsyncSession = Depends(get_async_session)):
+    q = await session.get(QuizQuestionORM, question_id)
+    if not q:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
     return q
 
 # User can update their answer while quiz is not submitted

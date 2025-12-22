@@ -89,7 +89,13 @@ class QuizSession(Base):
     def score_percentage(self):
         if self.question_count > 0:
             return (self.score / self.question_count) * 100
-        return 0
+        return 
+    
+    @property
+    def passed(self):
+        if self.quiz and self.quiz.passing_ratio is not None:
+            return self.score_percentage > (self.quiz.passing_ratio * 100)
+        return False
 
 class Answer(Base):
     __tablename__ = "answers"
