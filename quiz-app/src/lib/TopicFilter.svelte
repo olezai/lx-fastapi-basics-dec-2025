@@ -4,23 +4,23 @@
 
 {#if topics.length > 0}
   <div class="topic-filters">
-    <!-- TODO: Implement "All Topics" button -->
-    <!-- HINT:
-      - Add onclick handler that calls onFilterChange(null)
-      - Add class "active" when selectedTopicFilter === null
-      - Use template: class="topic-button {condition ? 'active' : ''}"
-    -->
-    <button class="topic-button">
+    <!-- All Topics button -->
+    <button
+      class="topic-button {selectedTopicFilter === null ? 'active' : ''}"
+      onclick={() => onFilterChange(null)}
+    >
       All Topics
     </button>
 
-    <!-- TODO: Implement topic filter buttons -->
-    <!-- HINT:
-      - Use {#each topics as topic (topic.id)}
-      - Add onclick handler that calls onFilterChange(topic.id)
-      - Add class "active" when selectedTopicFilter === topic.id
-      - Display topic.name as button text
-    -->
+    <!-- Topic filter buttons -->
+    {#each topics as topic (topic.id)}
+      <button
+        class="topic-button {selectedTopicFilter === topic.id ? 'active' : ''}"
+        onclick={() => onFilterChange(topic.id)}
+      >
+        {topic.name}
+      </button>
+    {/each}
   </div>
 {/if}
 
