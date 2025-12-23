@@ -2,79 +2,211 @@
   import { onMount } from "svelte";
   import TopicFilter from "./lib/TopicFilter.svelte";
   import QuizCard from "./lib/QuizCard.svelte";
-  import { fetchQuizzesData } from "./lib/utils.js";
+  import QuizTakingScreen from "./lib/QuizTakingScreen.svelte";
+  import ResultsScreen from "./lib/ResultsScreen.svelte";
+  import Timer from "./lib/Timer.svelte";
+  import Navigation from "./lib/Navigation.svelte";
+  import { fetchQuizzesData, postStartQuiz, getQuizSessionStats, fetchNextQuestion, postSubmitQuiz  } from "./lib/utils.js";
 
-  // Reactive state
-  let loading = $state(false);
-  let error = $state(null);
-  let quizzes = $state([]);
-  let topics = $state([]);
-  let selectedTopicFilter = $state(null);
+  // Grouped state management
+  let ui = $state({
+    screen: "quiz-list", // quiz-list, quiz-taking, results
+    loading: false,
+    error: null
+  });
+
+  let quizData = $state({
+    quizzes: [],
+    topics: [],
+    selectedTopicFilter: null
+  });
+
+  let session = $state({
+    current: null,
+    summary: null,
+    currentQuestion: null,
+    review: false
+  });
+
+  let timer = $state({
+    timeLeft: null
+  });
+
+  // Auto-fetch next question when entering quiz-taking screen with active session
+  $effect(() => {
+    if ( ui.screen === "quiz-taking" && session.current && !session.summary && !session.currentQuestion && !ui.loading && !session.review) {
+      // Check if there are still unanswered questions
+      const answeredCount = session.current.answers?.length || 0;
+      const hasUnansweredQuestions = answeredCount < session.current.question_count;
+
+      // Session is in progress but no current question loaded
+      if (hasUnansweredQuestions) {
+        // Fetch the next question
+        (async () => {
+          try {
+            ui.loading = true;
+            ui.error = null;
+            session.currentQuestion = await fetchNextQuestion(session.current.id);
+          } catch (err) {
+            ui.error = err.message;
+          } finally {
+            ui.loading = false;
+          }
+        })();
+      }
+    }
+  });
 
   // Fetch data on component mount
   onMount(async () => {
     try {
-      loading = true;
-      error = null;
+      ui.loading = true;
+      ui.error = null;
       const data = await fetchQuizzesData();
-      quizzes = data.quizzes;
-      topics = data.topics;
+      quizData.quizzes = data.quizzes;
+      quizData.topics = data.topics;
     } catch (err) {
-      error = err.message;
+      ui.error = err.message;
     } finally {
-      loading = false;
+      ui.loading = false;
     }
   });
 
-  // Derived value: filtered quizzes based on selected topic
+
+  // filtered quizzes computed prop
   let filteredQuizzes = $derived(
-    selectedTopicFilter === null
-      ? quizzes
-      : quizzes.filter((q) => q.topic_id === selectedTopicFilter)
+    quizData.selectedTopicFilter === null
+      ? quizData.quizzes
+      : quizData.quizzes.filter((q) => q.topic_id === quizData.selectedTopicFilter)
   );
 
-  // Helper function to get topic name by ID
+  // Helper: get topic name by ID
   function getTopicName(topicId) {
-    return topics.find((t) => t.id === topicId)?.name || "Unknown";
+    return quizData.topics.find((t) => t.id === topicId)?.name || "Unknown";
   }
 
-  // Handler for topic filter changes
+  // Helper: get quiz name by ID
+  function getQuizNameById(quizId) {
+    return quizData.quizzes.find((q) => q.id === quizId)?.name || "Unknown Quiz";
+  }
+
+  // Handler: topic filter change
   function handleFilterChange(topicId) {
-    selectedTopicFilter = topicId;
+    quizData.selectedTopicFilter = topicId;
+  }
+
+  async function handleStartQuiz(quizId) {
+    try {
+      ui.loading = true;
+      ui.error = null;
+
+      // Step 1: Start new quiz session
+      session.summary = null;
+      session.current = await postStartQuiz(quizId);
+
+      // Step 2: Fetch first question
+      session.currentQuestion = await fetchNextQuestion(session.current.id);
+
+      // Step 3: Set timer if there's a time limit
+      timer.timeLeft = session.current.time_limit_seconds || null;
+
+      // Step 4: Navigate to quiz-taking screen
+      ui.screen = "quiz-taking";
+    } catch (err) {
+      ui.error = err.message;
+    } finally {
+      ui.loading = false;
+    }
+  }
+
+  // Refresh session data
+  async function refreshSession(sessionId) {
+    try {
+      ui.loading = true;
+      session.current = await getQuizSessionStats(sessionId);
+    } catch (err) {
+      ui.error = err.message;
+    } finally {
+      ui.loading = false;
+    }
+    return session.current;
+  }
+
+  // Handle timer expiration
+  async function handleTimeExpired() {
+    ui.error = "Time's up! Submitting quiz...";
+    try {
+      // Try to submit quiz
+      const summary = await postSubmitQuiz(session.current.id);
+      handleQuizComplete(summary);
+    } catch (err) {
+      // If postSubmitQuiz not implemented, show message
+      ui.error = "Time's up! Please implement postSubmitQuiz() to auto-submit.";
+    }
+  }
+
+  // Handle quiz completion
+  function handleQuizComplete(summary) {
+    ui.screen = "results";
+    session.summary = summary;
+    timer.timeLeft = null; // Stop timer
   }
 </script>
 
-<main>
-  <h1>Welcome to Quiz App!</h1>
+<!-- Navigation [debug] -->
+<div class="nav-panel">
+  <strong>NAVIGATION</strong>
+  <Navigation bind:appScreen={ui.screen} currentSession={session.current} sessionSummary={session.summary} onRefreshSession={refreshSession}/>
+  <Timer bind:timeLeft={timer.timeLeft} onTimeExpired={handleTimeExpired}/>
+</div>
 
-  {#if error}
+<main>
+  {#if ui.error}
     <div class="error">
-      <strong>Error:</strong> {error}
+      <strong>Error:</strong> {ui.error}
     </div>
   {/if}
 
-  {#if loading}
-    <div class="loading">Loading quizzes...</div>
-  {:else if topics.length > 0}
-    <!-- Topic Filter Component -->
-    <TopicFilter
-      {topics}
-      {selectedTopicFilter}
-      onFilterChange={handleFilterChange}
-    />
+  <!-- Quiz List Screen -->
+  {#if ui.screen === "quiz-list"}
+    <h1>Welcome to Quiz App!</h1>
 
-    <!-- Quiz List -->
-    {#if filteredQuizzes.length > 0}
-      <div class="quiz-list">
-        {#each filteredQuizzes as quiz (quiz.id)}
-          <QuizCard {quiz} topic={getTopicName(quiz.topic_id)} />
-        {/each}
-      </div>
+    {#if ui.loading}
+      <div class="loading">Loading quizzes...</div>
+    {:else if quizData.topics.length > 0}
+      <TopicFilter
+        topics={quizData.topics}
+        selectedTopicFilter={quizData.selectedTopicFilter}
+        onFilterChange={handleFilterChange}
+      />
+
+      {#if filteredQuizzes.length > 0}
+        <div class="quiz-list">
+          {#each filteredQuizzes as quiz (quiz.id)}
+            <QuizCard
+              {quiz}
+              topic={getTopicName(quiz.topic_id)}
+              onStart={() => handleStartQuiz(quiz.id)}
+              loading={ui.loading}
+            />
+          {/each}
+        </div>
+      {:else}
+        <p class="no-quizzes">No quizzes available for this topic.</p>
+      {/if}
     {:else}
-      <p class="no-quizzes">No quizzes available for this topic.</p>
+      <p class="no-data">No topics or quizzes available.</p>
     {/if}
-  {:else}
-    <p class="no-data">No topics or quizzes available.</p>
+  {/if}
+
+  <!-- Quiz Taking Screen -->
+  {#if ui.screen === "quiz-taking" && session.current}
+    <QuizTakingScreen bind:session bind:ui {getQuizNameById} {refreshSession} onQuizComplete={handleQuizComplete}/>
+  {/if}
+
+  <!-- Results Screen -->
+  {#if ui.screen === "results" && session.summary}
+    <ResultsScreen sessionSummary={session.summary} {getQuizNameById}/>
   {/if}
 </main>
 
@@ -124,5 +256,25 @@
     padding: 40px;
     color: light-dark(#999, #666);
     font-size: 1.1rem;
+  }
+
+  .nav-panel {
+    /* Positioning properties */
+    position: fixed; /* Fixes it to the viewport */
+    top: 20px; /* 20px down from the top edge */
+    right: 20px; /* 20px in from the right edge */
+
+    /* Appearance properties */
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    padding: 15px;
+    z-index: 1000; /* Ensures it sits above other page content */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 250px; /* Optional: Set a fixed width */
+
+    /* Optional: Add dark mode styles for the panel itself */
+    color-scheme: light dark;
+    background-color: light-dark(#f9f9f9, #333);
+    color: light-dark(#000, #fff);
   }
 </style>

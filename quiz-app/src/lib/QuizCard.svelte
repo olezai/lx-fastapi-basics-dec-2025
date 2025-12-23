@@ -1,5 +1,5 @@
 <script>
-  let { quiz, topic } = $props();
+  let { quiz, topic, onStart, loading = false } = $props();
 
   function formatTime(seconds) {
     if (!seconds) return 'Unlimited';
@@ -22,7 +22,10 @@
     <p><strong>Passing Score:</strong> {Math.round(quiz.passing_ratio * 100)}%</p>
   {/if}
 
-  <!-- TODO: In Exercise 5.2, this button will be functional -->
+  <!-- TODO: Wire up the Start button
+       - Add onclick handler to call onStart
+       - Button should show "Starting..." when loading is true
+  -->
   <button disabled>
     Start Quiz
   </button>
@@ -57,6 +60,7 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 1rem;
+    width: 100%;
   }
 
   button:disabled {

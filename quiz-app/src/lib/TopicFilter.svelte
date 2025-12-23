@@ -4,7 +4,6 @@
 
 {#if topics.length > 0}
   <div class="topic-filters">
-    <!-- All Topics button -->
     <button
       class="topic-button {selectedTopicFilter === null ? 'active' : ''}"
       onclick={() => onFilterChange(null)}
@@ -12,7 +11,6 @@
       All Topics
     </button>
 
-    <!-- Topic filter buttons -->
     {#each topics as topic (topic.id)}
       <button
         class="topic-button {selectedTopicFilter === topic.id ? 'active' : ''}"
