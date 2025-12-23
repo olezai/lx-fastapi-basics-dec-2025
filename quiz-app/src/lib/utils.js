@@ -1,4 +1,4 @@
-const API_QUIZ_BASE = 'http://localhost:8001';
+const API_QUIZ_BASE = import.meta.env.VITE_API_QUIZ_BASE || 'http://localhost/api/quizzes';
 
 /**
  * Helper function to create error messages from API responses
