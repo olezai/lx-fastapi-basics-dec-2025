@@ -31,13 +31,20 @@ services:
       PYTHONUNBUFFERED: 1
       DATABASE_URL: postgresql+asyncpg://quiz_usr:quiz_pwd@quiz-db:5432/quiz_db
       QUESTION_SERVICE_BASE_URL: http://question-srv:8000
-    ports:
-      - "8001:8000"
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --log-level trace --reload
+    # ports:
+    #   - "8001:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --log-level trace --reload --root-path /api/quizzes
     volumes:
       - ./quiz:/quiz
     networks:
       - svc_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.quiz-service.rule=PathPrefix(`/api/quizzes`)"
+      - "traefik.http.routers.quiz-service.entrypoints=web"
+      - "traefik.http.services.quiz-service.loadbalancer.server.port=8000"
+      - "traefik.http.middlewares.quiz-strip.stripprefix.prefixes=/api/quizzes"
+      - "traefik.http.routers.quiz-service.middlewares=quiz-strip"
 
 volumes:
   quiz_pg_data:
