@@ -166,22 +166,19 @@ export async function fetchQuizDetails(quizId) {
 }
 
 /**
- * TODO: Implement postSubmitQuiz function
- *
- * This function should submit a quiz session and return the session summary with results.
- *
- * API Endpoint: POST /sessions/{sessionId}/submit
- *
- * Steps:
- * 1. Make a POST request to the submit endpoint
- * 2. Check if the response is ok
- * 3. If not ok, throw an error with appropriate message
- * 4. Parse and return the session summary JSON
- *
  * @param {string} sessionId - The quiz session ID to submit
  * @returns {Promise<Object>} - The quiz session summary with results
  */
 export async function postSubmitQuiz(sessionId) {
-  // TODO: Implement this function
-  throw new Error('postSubmitQuiz not yet implemented');
+  const res = await fetch(`${API_QUIZ_BASE}/sessions/${sessionId}/submit`, {
+    method: 'POST'
+  });
+
+  if (!res.ok) {
+    const errorMsg = await getErrorMessage(res, 'Failed to submit quiz');
+    throw new Error(errorMsg);
+  }
+
+  const sessionSummary = await res.json();
+  return sessionSummary;
 }

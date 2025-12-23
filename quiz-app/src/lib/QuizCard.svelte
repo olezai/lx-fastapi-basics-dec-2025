@@ -22,12 +22,8 @@
     <p><strong>Passing Score:</strong> {Math.round(quiz.passing_ratio * 100)}%</p>
   {/if}
 
-  <!-- TODO: Wire up the Start button
-       - Add onclick handler to call onStart
-       - Button should show "Starting..." when loading is true
-  -->
-  <button disabled>
-    Start Quiz
+  <button onclick={onStart} disabled={loading}>
+    {loading ? 'Starting...' : 'Start Quiz'}
   </button>
 </div>
 

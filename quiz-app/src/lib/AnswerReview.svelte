@@ -62,16 +62,22 @@
     }
   }
 
-// TODO: Implement handleSubmitQuiz function
-  // This function should:
-  // 1. Set loading to true and clear any errors
-  // 2. Call postSubmitQuiz() with the current session ID
-  // 3. Call onQuizComplete() callback with the session summary
-  // 4. Handle any errors by setting the error message
-  // 5. Set loading to false in the finally block
-  async function handleSubmitQuiz() {
-    // TODO: Implement quiz submission
+async function handleSubmitQuiz() {
+  try {
+    loading = true;
+    error = null;
+
+    // Submit the quiz
+    const sessionSummary = await postSubmitQuiz(currentSession.id);
+
+    // Notify parent that quiz is complete
+    onQuizComplete(sessionSummary);
+  } catch (err) {
+    error = err.message;
+  } finally {
+    loading = false;
   }
+}
 </script>
 
 <div class="answers-review">
@@ -105,14 +111,10 @@
       {/each}
     </div>
 
-    <!-- TODO: Add Submit Quiz button
-         - Should call handleSubmitQuiz when clicked
-         - Should be disabled when loading or if quiz is already completed
-         - Should show "Submitting..." when loading is true
-         - Should have class "submit-btn"
-    -->
     <div class="submit-section">
-      <!-- TODO: Add Submit Quiz button here -->
+        <button onclick={handleSubmitQuiz} disabled={loading || currentSession.completed_at} class="submit-btn">
+          {loading ? 'Submitting...' : 'Submit Quiz'}
+        </button>
     </div>
   {/if}
 </div>
